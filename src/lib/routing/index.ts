@@ -47,6 +47,9 @@ export function createRouting({
     // 2. match the component and render a content
     matchRoute(targetPathname);
   });
+  window.addEventListener('popstate', function () {
+    matchRoute(window.location.pathname);
+  });
 }
 
 function findAnchorTag(element: HTMLElement) {
