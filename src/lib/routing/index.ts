@@ -1,11 +1,11 @@
 // routing library
 
 import type { SvelteComponent } from 'svelte';
-import NotFound from './NotFound.svelte';
+const NotFound = () => import('./NotFound.svelte');
 
 interface Route {
   url: string;
-  component: SvelteComponent;
+  component: () => Promise<SvelteComponent>;
 }
 
 export function createRouting({
@@ -22,10 +22,13 @@ export function createRouting({
     const matchedRoute = routes.find((route) => {
       return route.url === pathname;
     });
-    const matchedComponent = matchedRoute?.component ?? NotFound;
-    currentComponent = new matchedComponent({
-      target,
-    });
+    const matchedComponentPromise = matchedRoute?.component ?? NotFound;
+
+    matchedComponentPromise().then(({ default: matchedComponent }) => {
+      currentComponent = new matchedComponent({
+        target,
+      });
+    })
   }
 
   let currentComponent;
