@@ -26,24 +26,31 @@ export function createRouting({
     currentComponent = new matchedComponent({
       target,
     });
-
-    // TODO: clean up the a click event 
-    document.querySelectorAll('a').forEach((a) => {
-      a.addEventListener('click', function (event) {
-        if (a.target) return;
-        event.preventDefault();
-        const targetLocation = a.href;
-        const targetPathname = new URL(targetLocation).pathname;
-
-        // 1. update the URL without navigating
-        history.pushState({}, undefined, targetPathname);
-
-        // 2. match the component and render a content
-        matchRoute(targetPathname);
-      });
-    });
   }
 
   let currentComponent;
   matchRoute(window.location.pathname);
+
+  window.addEventListener('click', function (event) {
+    const clickTarget = event.target;
+    const anchorTag = findAnchorTag(clickTarget as HTMLElement);
+    if (!anchorTag) return;
+    if (anchorTag.target) return;
+    if (anchorTag.hasAttribute('no-routing')) return;
+    event.preventDefault();
+    const targetLocation = anchorTag.href;
+    const targetPathname = new URL(targetLocation).pathname;
+
+    // 1. update the URL without navigating
+    history.pushState({}, undefined, targetPathname);
+
+    // 2. match the component and render a content
+    matchRoute(targetPathname);
+  });
+}
+
+function findAnchorTag(element: HTMLElement) {
+  if (element.tagName === 'HTML') return null;
+  if (element.tagName === 'A') return element;
+  else return findAnchorTag(element.parentElement);
 }
