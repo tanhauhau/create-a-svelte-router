@@ -1,6 +1,7 @@
 // routing library
 
 import type { SvelteComponent } from 'svelte';
+import LoadingIndicator from './LoadingIndicator.svelte';
 const NotFound = () => import('./NotFound.svelte');
 
 interface Route {
@@ -16,19 +17,31 @@ export function createRouting({
   target: HTMLElement;
 }) {
   function matchRoute(pathname) {
-    if (currentComponent) {
-      currentComponent.$destroy();
-    }
     const matchedRoute = routes.find((route) => {
       return route.url === pathname;
     });
     const matchedComponentPromise = matchedRoute?.component ?? NotFound;
-
+    showLoadingIndicator();
     matchedComponentPromise().then(({ default: matchedComponent }) => {
+      hideLoadingIndicator();
+      if (currentComponent) {
+        currentComponent.$destroy();
+      }
       currentComponent = new matchedComponent({
         target,
       });
     })
+  }
+
+  const indicator = new LoadingIndicator({
+    target: document.body,
+  });
+
+  function showLoadingIndicator() {
+    indicator.show();
+  }
+  function hideLoadingIndicator() {
+    indicator.hide();
   }
 
   let currentComponent;
