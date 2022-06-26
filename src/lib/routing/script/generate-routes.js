@@ -55,6 +55,7 @@ createRouting({
 function getRegExpAndParams(relativePath) {
   const component = relativePath.replace(/\.svelte$/, '');
   const segments = component.split('/');
+  const parts = [];
   const length = segments.length;
 
   const params = [];
@@ -63,6 +64,8 @@ function getRegExpAndParams(relativePath) {
 
   for (let i = 0; i < length; i++) {
     let segment = segments[i];
+    const part = { segment };
+    parts.push(part);
     if (i === length - 1 && segment === 'index') {
       segment = '';
     }
@@ -128,6 +131,9 @@ function getRegExpAndParams(relativePath) {
           } else {
             regexStr += '([^/]+)';
           }
+          part.dynamic = true;
+          if (rest) part.rest = true;
+          if (match) part.match = true;
           isOpening = false;
         } else {
           if (isOpening) {
@@ -154,6 +160,7 @@ function getRegExpAndParams(relativePath) {
     regex: `/^${regexSegments}\\/?$/`,
     params,
     matches,
+    parts,
   };
 }
 
@@ -201,11 +208,49 @@ function exploreFolders(rootRouteDirectory) {
 
   // extract regex and params
   for (const route of routes) {
-    const { regex, params, matches } = getRegExpAndParams(route.relativePath);
+    const { regex, params, matches, parts } = getRegExpAndParams(
+      route.relativePath
+    );
     route.regex = regex;
     route.params = params;
     route.matches = matches;
+    route.parts = parts;
   }
+
+  routes.sort((routeA, routeB) => {
+    const partsA = routeA.parts;
+    const partsB = routeB.parts;
+    if (partsA.length !== partsB.length) {
+      return partsA.length < partsB.length ? 1 : -1;
+      // /a/[a]/[b] -> 3
+      // /a/[...rest] -> 2
+    }
+
+    for (let i = 0; i < partsA.length; i++) {
+      const partA = partsA[i];
+      const partB = partsB[i];
+
+      if (partA.dynamic !== partB.dynamic) {
+        return partA.dynamic ? 1 : -1;
+      }
+      if (partA.match !== partB.match) {
+        return partA.match ? -1 : 1;
+      }
+      if (partA.rest !== partB.rest) {
+        return partA.rest ? 1 : -1;
+      }
+    }
+
+    return routeA.relativePath < routeB.relativePath ? -1 : 1;
+    // // `/a/[b]` < `/[a]/b`
+    // //
+    // // a > b
+    // return 1;
+    // // a < b
+    // return -1;
+    // // a === b
+    // return 0;
+  });
 
   return routes;
 }

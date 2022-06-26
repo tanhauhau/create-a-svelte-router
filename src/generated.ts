@@ -4,52 +4,6 @@ import { createRouting } from './lib/routing';
 createRouting({
   routes: [
     {
-      url: /^\/a(?:|\/(.+))\/?$/,
-      params: [
-        {
-          name: 'rest',
-          rest: true,
-          matching: undefined,
-        },
-      ],
-      components: [
-        () => import('./$/__layout.svelte'),
-        () => import('./$/a/[...rest].svelte'),
-      ],
-    },
-    {
-      url: /^\/a\/b\/?$/,
-      params: [],
-      components: [
-        () => import('./$/__layout.svelte'),
-        () => import('./$/a/b.svelte'),
-      ],
-    },
-    {
-      url: /^\/b\/?$/,
-      params: [],
-      components: [
-        () => import('./$/__layout.svelte'),
-        () => import('./$/b.svelte'),
-      ],
-    },
-    {
-      url: /^\/c\/?$/,
-      params: [],
-      components: [
-        () => import('./$/__layout.svelte'),
-        () => import('./$/c.svelte'),
-      ],
-    },
-    {
-      url: /^\/\/?$/,
-      params: [],
-      components: [
-        () => import('./$/__layout.svelte'),
-        () => import('./$/index.svelte'),
-      ],
-    },
-    {
       url: /^\/item\/([^/]+)\/([^/]+)\/?$/,
       params: [
         {
@@ -91,6 +45,14 @@ createRouting({
       ],
     },
     {
+      url: /^\/a\/b\/?$/,
+      params: [],
+      components: [
+        () => import('./$/__layout.svelte'),
+        () => import('./$/a/b.svelte'),
+      ],
+    },
+    {
       url: /^\/shop\/([^/]+)\/?$/,
       params: [
         {
@@ -103,6 +65,44 @@ createRouting({
         () => import('./$/__layout.svelte'),
         () => import('./$/shop/__layout.svelte'),
         () => import('./$/shop/[shopId].svelte'),
+      ],
+    },
+    {
+      url: /^\/a(?:|\/(.+))\/?$/,
+      params: [
+        {
+          name: 'rest',
+          rest: true,
+          matching: undefined,
+        },
+      ],
+      components: [
+        () => import('./$/__layout.svelte'),
+        () => import('./$/a/[...rest].svelte'),
+      ],
+    },
+    {
+      url: /^\/b\/?$/,
+      params: [],
+      components: [
+        () => import('./$/__layout.svelte'),
+        () => import('./$/b.svelte'),
+      ],
+    },
+    {
+      url: /^\/c\/?$/,
+      params: [],
+      components: [
+        () => import('./$/__layout.svelte'),
+        () => import('./$/c.svelte'),
+      ],
+    },
+    {
+      url: /^\/\/?$/,
+      params: [],
+      components: [
+        () => import('./$/__layout.svelte'),
+        () => import('./$/index.svelte'),
       ],
     },
   ],
