@@ -19,29 +19,123 @@ fs.writeFileSync(
 import { createRouting } from './lib/routing';
 createRouting({
   routes: [
-    ${routes.map(({ componentPath, relativePath, layouts }) => {
-      const component = relativePath.replace(/\.svelte$/, '');
-      const segments = component.split('/');
-      console.log(segments);
-      if (segments[segments.length - 1] === 'index') {
-        segments[segments.length - 1] = '';
-      }
-      ;
-      const regExp = `/^\\/${segments.join('\\/')}\\/?$/`;
-      return `{
-        url: ${regExp},
-        params: [],
+    ${routes
+      .map(({ componentPath, relativePath, layouts }) => {
+        const { regex, params } = getRegExpAndParams(relativePath);
+        console.log(params);
+        return `{
+        url: ${regex},
+        params: [
+          ${params
+            .map(
+              ({ name, rest }) =>
+                // TODO:
+                `{ name: ${JSON.stringify(name)}, rest: ${
+                  rest ? 'true' : 'false'
+                } }`
+            )
+            .join(',\n')}
+        ],
         components: [
           () => import('./$/${relativePath}')
         ]
       }`;
-    }).join(',\n')}
+      })
+      .join(',\n')}
   ],
   target: document.getElementById('app'),
 });
 `,
   'utf8'
 );
+
+function getRegExpAndParams(relativePath) {
+  const component = relativePath.replace(/\.svelte$/, '');
+  const segments = component.split('/');
+  const length = segments.length;
+
+  const params = [];
+  const regexSegments = [];
+
+  for (let i = 0; i < length; i++) {
+    let segment = segments[i];
+    if (i === length - 1 && segment === 'index') {
+      segment = '';
+    }
+    if (segment.indexOf('[') > -1) {
+      let isOpening = false;
+      let paramName = '';
+      let regexStr = '';
+      let rest = false;
+      // sanity checking
+      // a[baaac
+      //       ^
+      // partname: 'a' + '([^/]+)'
+      for (let index = 0; index < segment.length; index++) {
+        const char = segment[index];
+        if (char === '[') {
+          if (isOpening) {
+            throw new Error(
+              `Invalid path ${relativePath}, encounter "[" after another "["`
+            );
+          }
+          isOpening = true;
+          if (
+            segment[index + 1] === '.' &&
+            segment[index + 2] === '.' &&
+            segment[index + 3] === '.'
+          ) {
+            rest = true;
+            index += 3;
+          } else {
+            rest = false;
+          }
+          paramName = '';
+        } else if (char === ']') {
+          if (!isOpening) {
+            throw new Error(
+              `Invalid path ${relativePath}, encounter "]" before any "["`
+            );
+          }
+          if (paramName === '') {
+            throw new Error(
+              `Invalid path ${relativePath}, encounter "[]" without parameter name`
+            );
+          }
+          params.push({
+            name: paramName,
+            rest,
+          });
+          if (rest) {
+            regexStr += '(?:|\\/(.+))';
+          } else {
+            regexStr += '([^/]+)';
+          }
+          isOpening = false;
+        } else {
+          if (isOpening) {
+            paramName += char;
+          } else {
+            regexStr += char;
+          }
+        }
+      }
+
+      if (isOpening) {
+        throw new Error(`Invalid path ${relativePath}, unclosed "["`);
+      }
+
+      segment = regexStr;
+    }
+
+    regexSegments.push(segment);
+  }
+
+  return {
+    regex: `/^\\/${regexSegments.join('\\/')}\\/?$/`,
+    params,
+  };
+}
 
 function exploreFolders(rootRouteDirectory) {
   function _explore(folderPath) {
