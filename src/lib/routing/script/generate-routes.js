@@ -1,17 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 
-// TODO:
-// - [ ] generates route definition
-// - [ ] handle layout
-
 const cwd = process.cwd();
 
 const outputFilePath = path.join(cwd, 'src/generated.ts');
 const inputFolder = path.join(cwd, 'src/$');
 
 const routes = exploreFolders(inputFolder);
-console.log({ routes });
 
 fs.writeFileSync(
   outputFilePath,
@@ -20,9 +15,8 @@ import { createRouting } from './lib/routing';
 createRouting({
   routes: [
     ${routes
-      .map(({ componentPath, relativePath, layouts }) => {
+      .map(({ componentPath, relativePath, components }) => {
         const { regex, params } = getRegExpAndParams(relativePath);
-        console.log(params);
         return `{
         url: ${regex},
         params: [
@@ -37,7 +31,9 @@ createRouting({
             .join(',\n')}
         ],
         components: [
-          () => import('./$/${relativePath}')
+          ${components
+            .map((relativePath) => `() => import('./$/${relativePath}')`)
+            .join(',')}
         ]
       }`;
       })
@@ -143,19 +139,39 @@ function exploreFolders(rootRouteDirectory) {
     for (const file of files) {
       const filePath = path.join(folderPath, file);
       const isDirectory = fs.statSync(filePath).isDirectory();
+      const relativePath = path.relative(rootRouteDirectory, filePath);
 
       if (isDirectory) {
         _explore(filePath);
+      } else if (file === '__layout.svelte') {
+        layouts[relativePath] = {
+          componentPath: filePath,
+          relativePath,
+        };
       } else {
         routes.push({
           componentPath: filePath,
-          relativePath: path.relative(rootRouteDirectory, filePath),
-          layouts: [],
+          relativePath,
+          components: [relativePath],
         });
       }
     }
   }
   const routes = [];
+  const layouts = {};
   _explore(rootRouteDirectory);
+
+  for (const route of routes) {
+    let dirname = route.relativePath;
+    while (dirname !== '.') {
+      dirname = path.dirname(dirname);
+      const layoutCandidate =
+        dirname === '.' ? '__layout.svelte' : dirname + '/__layout.svelte';
+      const layout = layouts[layoutCandidate];
+      if (layout) {
+        route.components.unshift(layout.relativePath);
+      }
+    }
+  }
   return routes;
 }
