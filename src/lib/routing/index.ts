@@ -7,6 +7,7 @@ const NotFound = () => import('./NotFound.svelte');
 interface Route {
   url: RegExp;
   params: string[];
+  paramsMatching: Array<(param: string) => boolean>
   component: () => Promise<SvelteComponent>;
 }
 
@@ -21,14 +22,24 @@ export function createRouting({
     let matchedRouteParams;
     let matchedRoute;
 
-    for (const route of routes) {
+    route_matching: for (const route of routes) {
       const match = pathname.match(route.url);
       if (match) {
-        matchedRoute = route;
         const params = {};
         for (let i = 0; i < route.params.length; i++) {
-          params[route.params[i]] = match[i + 1];
+          const paramMatchingFn = route.paramsMatching[i];
+          const paramName = route.params[i];
+          const paramValue = match[i + 1];
+
+          if (typeof paramMatchingFn === 'function') {
+            if (!paramMatchingFn(paramValue)) {
+              continue route_matching;
+            }
+          }
+          params[paramName] = paramValue;
         }
+
+        matchedRoute = route;
         matchedRouteParams = params;
         break;
       }
