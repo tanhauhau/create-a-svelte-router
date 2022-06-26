@@ -18,20 +18,12 @@ createRouting({
       components: [() => import('./routes/C.svelte')],
     },
     {
+      // /shop/1-2
+      // /shop/[year]-[month]
+      // /shop/[shopId].svelte
       url: /^\/shop\/([^/]+)\/?$/,
       params: [{ name: 'shopId' }],
       components: [
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
-        () => import('./routes/Layout.svelte'),
         () => import('./routes/Layout.svelte'),
         () => import('./routes/Shop.svelte'),
       ],
@@ -53,6 +45,7 @@ createRouting({
         () => import('./routes/Item.svelte'),
       ],
     },
+    // TODO: will do params matching later
     {
       url: /^\/item\/([^/]+)\/([^/]+)\/?$/,
       params: [{ name: 'shopId' }, { name: 'itemId' }],
