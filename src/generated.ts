@@ -41,7 +41,9 @@ createRouting({
       components: [
         () => import('./$/__layout.svelte'),
         () => import('./$/item/__layout.svelte'),
-        () => import('./$/item/[shopId]/[itemId].svelte'),
+        () => import('./$/item/[shopId]/__layout-root.svelte'),
+        () => import('./$/item/[shopId]/__layout-foo@root.svelte'),
+        () => import('./$/item/[shopId]/[itemId]@foo.svelte'),
       ],
     },
     {
