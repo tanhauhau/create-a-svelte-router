@@ -6,8 +6,11 @@ const NotFound = () => import('./NotFound.svelte');
 
 interface Route {
   url: RegExp;
-  params: string[];
-  paramsMatching: Array<(param: string) => boolean>
+  params: Array<{
+    name: string;
+    matching?: (param: string) => boolean;
+    rest?: boolean;
+  }>;
   component: () => Promise<SvelteComponent>;
 }
 
@@ -27,16 +30,20 @@ export function createRouting({
       if (match) {
         const params = {};
         for (let i = 0; i < route.params.length; i++) {
-          const paramMatchingFn = route.paramsMatching[i];
-          const paramName = route.params[i];
-          const paramValue = match[i + 1];
+          const {
+            name: paramName,
+            matching: paramMatchingFn,
+            rest: paramIsRest,
+          } = route.params[i];
+          const paramValue = match[i + 1] ?? '';
 
           if (typeof paramMatchingFn === 'function') {
             if (!paramMatchingFn(paramValue)) {
               continue route_matching;
             }
           }
-          params[paramName] = paramValue;
+
+          params[paramName] = paramIsRest ? paramValue.split('/') : paramValue;
         }
 
         matchedRoute = route;
@@ -61,7 +68,7 @@ export function createRouting({
         });
       }
       currentComponent = matchedComponent;
-    })
+    });
   }
 
   const indicator = new LoadingIndicator({

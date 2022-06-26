@@ -5,41 +5,51 @@ createRouting({
     {
       url: /^\/\/?$/,
       params: [],
-      paramsMatching: [],
       component: () => import('./routes/A.svelte'),
     },
     {
       url: /^\/b\/?$/,
       params: [],
-      paramsMatching: [],
       component: () => import('./routes/B.svelte'),
     },
     {
       url: /^\/c\/?$/,
       params: [],
-      paramsMatching: [],
       component: () => import('./routes/C.svelte'),
     },
     {
       url: /^\/shop\/([^/]+)\/?$/,
-      params: ['shopId'],
-      paramsMatching: [],
+      params: [{ name: 'shopId' }],
       component: () => import('./routes/Shop.svelte'),
     },
     {
       url: /^\/item\/([^/]+)\/([^/]+)\/?$/,
-      params: ['shopId', 'itemId'],
-      paramsMatching: [
-        (shopId) => /^\d+$/.test(shopId),
-        (itemId) => /^\d+$/.test(itemId),
+      params: [
+        {
+          name: 'shopId',
+          matching: (shopId) => /^\d+$/.test(shopId),
+        },
+        {
+          name: 'itemId',
+          matching: (itemId) => /^\d+$/.test(itemId),
+        },
       ],
       component: () => import('./routes/Item.svelte'),
     },
     {
       url: /^\/item\/([^/]+)\/([^/]+)\/?$/,
-      params: ['shopId', 'itemId'],
-      paramsMatching: [],
+      params: [{ name: 'shopId' }, { name: 'itemId' }],
       component: () => import('./routes/Haha.svelte'),
+    },
+    {
+      url: /^\/a(?:\/?|\/(.+)\/?)$/,
+      params: [
+        {
+          name: 'rest',
+          rest: true,
+        },
+      ],
+      component: () => import('./routes/Rest.svelte'),
     },
   ],
   target: document.getElementById('app'),
