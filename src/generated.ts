@@ -5,6 +5,7 @@ createRouting({
   routes: [
     {
       url: /^\/item\/([^/]+)\/([^/]+)\/?$/,
+      routeId: 'item/[shopId=int]/[itemId=integer]',
       params: [
         {
           name: 'shopId',
@@ -26,6 +27,7 @@ createRouting({
     },
     {
       url: /^\/item\/([^/]+)\/([^/]+)\/?$/,
+      routeId: 'item/[shopId]/[itemId]@foo',
       params: [
         {
           name: 'shopId',
@@ -48,6 +50,7 @@ createRouting({
     },
     {
       url: /^\/a\/b\/?$/,
+      routeId: 'a/b',
       params: [],
       components: [
         () => import('./$/__layout.svelte'),
@@ -56,6 +59,7 @@ createRouting({
     },
     {
       url: /^\/shop\/([^/]+)\/?$/,
+      routeId: 'shop/[shopId]',
       params: [
         {
           name: 'shopId',
@@ -71,6 +75,7 @@ createRouting({
     },
     {
       url: /^\/a(?:|\/(.+))\/?$/,
+      routeId: 'a/[...rest]',
       params: [
         {
           name: 'rest',
@@ -85,6 +90,7 @@ createRouting({
     },
     {
       url: /^\/b\/?$/,
+      routeId: 'b',
       params: [],
       components: [
         () => import('./$/__layout.svelte'),
@@ -93,6 +99,7 @@ createRouting({
     },
     {
       url: /^\/c\/?$/,
+      routeId: 'c',
       params: [],
       components: [
         () => import('./$/__layout.svelte'),
@@ -101,6 +108,7 @@ createRouting({
     },
     {
       url: /^\/\/?$/,
+      routeId: 'index',
       params: [],
       components: [
         () => import('./$/__layout.svelte'),

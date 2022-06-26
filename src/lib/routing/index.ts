@@ -3,10 +3,12 @@
 import type { SvelteComponent } from 'svelte';
 import LoadingIndicator from './LoadingIndicator.svelte';
 import Main from './Main.svelte';
+import { _navigation, _page } from './_store';
 const NotFound = [() => import('./NotFound.svelte')];
 
 interface Route {
   url: RegExp;
+  routeId: string;
   params: Array<{
     name: string;
     matching?: (param: string) => boolean;
@@ -23,6 +25,7 @@ export function createRouting({
   target: HTMLElement;
 }) {
   let main;
+  let currentPathname;
 
   function matchRoute(pathname: string) {
     let matchedRouteParams;
@@ -57,11 +60,19 @@ export function createRouting({
 
     const matchedComponentsPromises = matchedRoute?.components ?? NotFound;
     showLoadingIndicator();
+    _navigation.set({ from: currentPathname, to: pathname })
 
     Promise.all(
       matchedComponentsPromises.map(fn => fn())
     ).then(matchedComponentModules => {
       hideLoadingIndicator();
+      _page.set({
+        url: pathname,
+        params: matchedRouteParams,
+        routeId: matchedRoute?.routeId,
+      });
+      _navigation.set(null);
+
       const matchedComponents = matchedComponentModules.map(module => module.default);
       if (!main) {
         main = new Main({
@@ -77,6 +88,8 @@ export function createRouting({
           matchedRouteParams,
         });
       }
+
+      currentPathname = pathname;
     })
   }
 

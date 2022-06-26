@@ -27,6 +27,7 @@ createRouting({
       .map(({ componentPath, relativePath, components, regex, params }) => {
         return `{
         url: ${regex},
+        routeId: ${JSON.stringify(relativePath.replace(/\.svelte$/, ''))},
         params: [
           ${params
             .map(
