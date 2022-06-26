@@ -38,13 +38,18 @@ export function createRouting({
     showLoadingIndicator();
     matchedComponentPromise().then(({ default: matchedComponent }) => {
       hideLoadingIndicator();
-      if (currentComponent) {
-        currentComponent.$destroy();
+      if (currentComponent === matchedComponent) {
+        currentComponentInstance.$set(matchedRouteParams);
+      } else {
+        if (currentComponentInstance) {
+          currentComponentInstance.$destroy();
+        }
+        currentComponentInstance = new matchedComponent({
+          props: matchedRouteParams,
+          target,
+        });
       }
-      currentComponent = new matchedComponent({
-        props: matchedRouteParams,
-        target,
-      });
+      currentComponent = matchedComponent;
     })
   }
 
@@ -60,6 +65,7 @@ export function createRouting({
   }
 
   let currentComponent;
+  let currentComponentInstance;
   matchRoute(window.location.pathname);
 
   window.addEventListener('click', function (event) {
