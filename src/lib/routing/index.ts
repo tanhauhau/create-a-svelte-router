@@ -2,7 +2,8 @@
 
 import type { SvelteComponent } from 'svelte';
 import LoadingIndicator from './LoadingIndicator.svelte';
-const NotFound = () => import('./NotFound.svelte');
+import Main from './Main.svelte';
+const NotFound = [() => import('./NotFound.svelte')];
 
 interface Route {
   url: RegExp;
@@ -11,7 +12,7 @@ interface Route {
     matching?: (param: string) => boolean;
     rest?: boolean;
   }>;
-  component: () => Promise<SvelteComponent>;
+  components: Array<() => Promise<SvelteComponent>>;
 }
 
 export function createRouting({
@@ -21,6 +22,8 @@ export function createRouting({
   routes: Route[];
   target: HTMLElement;
 }) {
+  let main;
+
   function matchRoute(pathname: string) {
     let matchedRouteParams;
     let matchedRoute;
@@ -52,23 +55,29 @@ export function createRouting({
       }
     }
 
-    const matchedComponentPromise = matchedRoute?.component ?? NotFound;
+    const matchedComponentsPromises = matchedRoute?.components ?? NotFound;
     showLoadingIndicator();
-    matchedComponentPromise().then(({ default: matchedComponent }) => {
+
+    Promise.all(
+      matchedComponentsPromises.map(fn => fn())
+    ).then(matchedComponentModules => {
       hideLoadingIndicator();
-      if (currentComponent === matchedComponent) {
-        currentComponentInstance.$set(matchedRouteParams);
-      } else {
-        if (currentComponentInstance) {
-          currentComponentInstance.$destroy();
-        }
-        currentComponentInstance = new matchedComponent({
-          props: matchedRouteParams,
+      const matchedComponents = matchedComponentModules.map(module => module.default);
+      if (!main) {
+        main = new Main({
+          props: {
+            matchedComponents,
+            matchedRouteParams,
+          },
           target,
         });
+      } else {
+        main.$set({
+          matchedComponents,
+          matchedRouteParams,
+        });
       }
-      currentComponent = matchedComponent;
-    });
+    })
   }
 
   const indicator = new LoadingIndicator({
@@ -82,8 +91,6 @@ export function createRouting({
     indicator.hide();
   }
 
-  let currentComponent;
-  let currentComponentInstance;
   matchRoute(window.location.pathname);
 
   window.addEventListener('click', function (event) {
