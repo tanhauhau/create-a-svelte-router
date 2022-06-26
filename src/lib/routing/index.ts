@@ -46,7 +46,7 @@ export function createRouting({
             }
           }
 
-          params[paramName] = paramIsRest ? paramValue.split('/') : paramValue;
+          params[paramName] = paramIsRest ? toArray(paramValue) : paramValue;
         }
 
         matchedRoute = route;
@@ -118,4 +118,11 @@ function findAnchorTag(element: HTMLElement) {
   if (element.tagName === 'HTML') return null;
   if (element.tagName === 'A') return element;
   else return findAnchorTag(element.parentElement);
+}
+
+function toArray(paramValue: string) {
+  if (paramValue[paramValue.length - 1] === '/') {
+    paramValue = paramValue.slice(0, -1);
+  }
+  return paramValue === '' ? [] : paramValue.split('/')
 }
