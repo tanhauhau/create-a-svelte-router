@@ -9,51 +9,64 @@ const paramsFolder = path.join(cwd, 'src/params');
 
 const LAYOUT_REGEX = /^__layout(?:-([^@]+)?)?(?:@(.+))?\.svelte$/;
 
-const routes = exploreFolders(inputFolder);
-const allMatches = new Set();
-routes.forEach((route) =>
-  route.matches.forEach((match) => allMatches.add(match))
-);
+export function initWatcher(watcher) {
+  function onChange(path) {
+    if (path.startsWith(inputFolder)) {
+      generateRoutesDefinition();
+    }
+  }
+  watcher.on('add', onChange).on('unlink', onChange);
 
-fs.writeFileSync(
-  outputFilePath,
-  `${Array.from(allMatches)
-    .map((match) => `import { match as ${match} } from './params/${match}';`)
-    .join('\n')}
-import { createRouting } from './lib/routing';
-createRouting({
-  routes: [
-    ${routes
-      .map(({ componentPath, relativePath, components, regex, params }) => {
-        return `{
-        url: ${regex},
-        routeId: ${JSON.stringify(relativePath.replace(/\.svelte$/, ''))},
-        params: [
-          ${params
-            .map(
-              ({ name, rest, match }) =>
-                `{
-                  name: ${JSON.stringify(name)},
-                  rest: ${rest ? 'true' : 'false'},
-                  matching: ${match},
-                 }`
-            )
-            .join(',\n')}
-        ],
-        components: [
-          ${components
-            .map((relativePath) => `() => import('./$/${relativePath}')`)
-            .join(',')}
-        ]
-      }`;
-      })
-      .join(',\n')}
-  ],
-  target: document.getElementById('app'),
-});
-`,
-  'utf8'
-);
+  generateRoutesDefinition();
+}
+
+export function generateRoutesDefinition() {
+  const routes = exploreFolders(inputFolder);
+  const allMatches = new Set();
+  routes.forEach((route) =>
+    route.matches.forEach((match) => allMatches.add(match))
+  );
+
+  fs.writeFileSync(
+    outputFilePath,
+    `${Array.from(allMatches)
+      .map((match) => `import { match as ${match} } from './params/${match}';`)
+      .join('\n')}
+  import { createRouting } from './lib/routing';
+  createRouting({
+    routes: [
+      ${routes
+        .map(({ componentPath, relativePath, components, regex, params }) => {
+          return `{
+          url: ${regex},
+          routeId: ${JSON.stringify(relativePath.replace(/\.svelte$/, ''))},
+          params: [
+            ${params
+              .map(
+                ({ name, rest, match }) =>
+                  `{
+                    name: ${JSON.stringify(name)},
+                    rest: ${rest ? 'true' : 'false'},
+                    matching: ${match},
+                   }`
+              )
+              .join(',\n')}
+          ],
+          components: [
+            ${components
+              .map((relativePath) => `() => import('./$/${relativePath}')`)
+              .join(',')}
+          ]
+        }`;
+        })
+        .join(',\n')}
+    ],
+    target: document.getElementById('app'),
+  });
+  `,
+    'utf8'
+  );
+}
 
 function getRegExpAndParams(relativePath) {
   const component = relativePath.replace(/(@.+)?\.svelte$/, '');
