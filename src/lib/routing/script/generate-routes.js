@@ -5,28 +5,35 @@ const cwd = process.cwd();
 
 const outputFilePath = path.join(cwd, 'src/generated.ts');
 const inputFolder = path.join(cwd, 'src/$');
+const paramsFolder = path.join(cwd, 'src/params');
 
 const routes = exploreFolders(inputFolder);
+const allMatches = new Set();
+routes.forEach((route) =>
+  route.matches.forEach((match) => allMatches.add(match))
+);
 
 fs.writeFileSync(
   outputFilePath,
-  `
+  `${Array.from(allMatches)
+    .map((match) => `import { match as ${match} } from './params/${match}';`)
+    .join('\n')}
 import { createRouting } from './lib/routing';
 createRouting({
   routes: [
     ${routes
-      .map(({ componentPath, relativePath, components }) => {
-        const { regex, params } = getRegExpAndParams(relativePath);
+      .map(({ componentPath, relativePath, components, regex, params }) => {
         return `{
         url: ${regex},
         params: [
           ${params
             .map(
-              ({ name, rest }) =>
-                // TODO:
-                `{ name: ${JSON.stringify(name)}, rest: ${
-                  rest ? 'true' : 'false'
-                } }`
+              ({ name, rest, match }) =>
+                `{
+                  name: ${JSON.stringify(name)},
+                  rest: ${rest ? 'true' : 'false'},
+                  matching: ${match},
+                 }`
             )
             .join(',\n')}
         ],
@@ -51,7 +58,8 @@ function getRegExpAndParams(relativePath) {
   const length = segments.length;
 
   const params = [];
-  const regexSegments = [];
+  let regexSegments = '';
+  const matches = [];
 
   for (let i = 0; i < length; i++) {
     let segment = segments[i];
@@ -98,8 +106,21 @@ function getRegExpAndParams(relativePath) {
               `Invalid path ${relativePath}, encounter "[]" without parameter name`
             );
           }
+          let match;
+          if (paramName.indexOf('=') > -1) {
+            [paramName, match] = paramName.split('=');
+
+            if (!fs.existsSync(path.join(paramsFolder, match + '.ts'))) {
+              throw new Error(
+                `Invalid path ${relativePath}, unknown matching function: "${match}"`
+              );
+            }
+
+            matches.push(match);
+          }
           params.push({
             name: paramName,
+            match,
             rest,
           });
           if (rest) {
@@ -121,15 +142,18 @@ function getRegExpAndParams(relativePath) {
         throw new Error(`Invalid path ${relativePath}, unclosed "["`);
       }
 
-      segment = regexStr;
+      segment = rest ? regexStr : '\\/' + regexStr;
+    } else {
+      segment = '\\/' + segment;
     }
 
-    regexSegments.push(segment);
+    regexSegments += segment;
   }
 
   return {
-    regex: `/^\\/${regexSegments.join('\\/')}\\/?$/`,
+    regex: `/^${regexSegments}\\/?$/`,
     params,
+    matches,
   };
 }
 
@@ -161,6 +185,7 @@ function exploreFolders(rootRouteDirectory) {
   const layouts = {};
   _explore(rootRouteDirectory);
 
+  // applying layouts
   for (const route of routes) {
     let dirname = route.relativePath;
     while (dirname !== '.') {
@@ -173,5 +198,14 @@ function exploreFolders(rootRouteDirectory) {
       }
     }
   }
+
+  // extract regex and params
+  for (const route of routes) {
+    const { regex, params, matches } = getRegExpAndParams(route.relativePath);
+    route.regex = regex;
+    route.params = params;
+    route.matches = matches;
+  }
+
   return routes;
 }

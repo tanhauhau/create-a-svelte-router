@@ -2,21 +2,9 @@
   import { onMount } from 'svelte';
   export let shopId;
   export let itemId;
-
-  let timer = 0;
-  onMount(() => {
-    const intervalId = setInterval(() => {
-      timer++;
-    }, 1000);
-    return () => clearInterval(intervalId);
-  });
 </script>
 
-<h1>Item {shopId} {itemId} {JSON.stringify($$props)}</h1>
-
-{timer}
+<h1>Haha {shopId} {itemId} {JSON.stringify($$props)}</h1>
 
 <a href="/item/007/007">James Bond</a>
-<a href="/item/008/008">008</a>
-<a href="/item/009/009">009</a>
-<a href="/shop/123">to shop</a>
+<a href="/item/asdf/007">asdf</a>
